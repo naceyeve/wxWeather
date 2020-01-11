@@ -1,3 +1,5 @@
+const QQMapWX = require('../../libs/qqmap-wx-jssdk.js')
+
 
 const weatherMap = {
   'sunny': '晴天',
@@ -25,7 +27,9 @@ Page({
     weatherBackground:'',
     hourlyWeather: [],
     todayTime:'',
-    todayTemp:''
+    todayTemp:'',
+    city:'上海市',
+    tapTip:'点击查看当前位置'
   },
   onPullDownRefresh(){
     this.getData(()=>{
@@ -34,9 +38,9 @@ Page({
   },
   getData(callBack){
     wx.request({
-      url: 'https://test-miniprogram.com/api/weather/now?city=%E4%B8%8A%E6%B5%B7%E5%B8%82',
+      url: 'https://test-miniprogram.com/api/weather/now',
       data: {
-        city: '上海市'
+        city: this.data.city
       },
       header: {
         'content-type': 'application/json' // 默认值
@@ -104,11 +108,29 @@ Page({
      wx.getLocation({
        success: res => {
          console.log(res.latitude,res.longitude)
+         this.qqmapsdk.reverseGeocoder({
+           location: {
+             latitude: res.latitude,
+             longitude: res.longitude
+           },
+           success: res => {
+             let city = res.result.address_component.city
+             console.log(city)
+             this.setData({
+               city:city,
+               tapTip:""
+             })
+             this.getData()
+           }
+         })
        },
      })
   },
   onLoad(){
     this.getData()
+    this.qqmapsdk = new QQMapWX({
+      key: 'EAXBZ-33R3X-AA64F-7FIPQ-BY27J-5UF5B'
+    })
     
   }
 })
