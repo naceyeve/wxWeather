@@ -1,8 +1,35 @@
 <!--index.wxml-->
 
 <view class="weather-wrapper">
-  <view class="temp">12°</view>
-  <view class="weather">天气</view>
-  <image class="weather-bg" src="/images/sunny-bg.png" mode="scaleToFile"></image>
+  <view class="location-wrapper">
+    <view class="location">
+      <image class="location-icon" src="/images/location-icon.png"></image>
+      <view class="location-text">广州市</view>
+    </view>
+    <view class="location-tips" bindtap="getLocation">点击获取当前位置</view>
+  </view>
+  <view class="temp">{{temp}}</view>
+  <view class="weather">{{weather}}</view>
+  <image class="weather-bg" src="{{weatherBackground}}" mode="scaleToFile"></image>
+  <view class="day-weather" bindtap="toTodayDetail">
+    <view class="day-time">{{todayTime}}</view>
+    <view class="day-temp">{{todayTemp}}</view>
+    <image class="day-arrow" src="/images/arrow.png"></image>
+  </view>
 </view>
+
+<view class="timetips">
+  <image class="timetips-icon" src="/images/time-icon.png"></image>
+  <view class="timetips-text">未来24小时天气预测</view>
+</view>
+
+<scroll-view scroll-x>
+  <view class="forecast">
+    <view wx:for="{{hourlyWeather}}" class="forecast-item">
+      <view class="forecas-time">{{item.time}}</view>
+      <image class="forecast-icon" src="{{item.path}}"></image>
+      <view class="forecast-temp">{{item.temp}}</view>
+    </view>
+  </view>
+</scroll-view>
 
