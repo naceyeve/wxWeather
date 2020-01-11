@@ -41,6 +41,7 @@
 .location-tips{
   margin-top:10rpx;
   text-align: center;
+  line-height: 42rpx;
 }
 
 .weather-bg{
