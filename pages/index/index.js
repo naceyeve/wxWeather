@@ -35,23 +35,19 @@ Page({
     todayTemp: "",
     todayDate: "",
     city: '广州市',
-    locationTipsText: UNPROMPTED_TIPS,
     locationAuthType: UNPROMPTED
   },
   onLoad() {
     this.qqmapsdk = new QQMapWX({
-      key: 'EAXBZ-33R3X-AA64F-7FIPQ-BY27J-5UF5B'
+      key: 'UFVBZ-NP6KF-VULJY-NTRUD-UQMB6-5GFMP'
     })
     wx.getSetting({
       success: res => {
         let auth = res.authSetting['scope.userLocation']
         let locationAuthType = auth ? AUTHORIZED
           : (auth === false) ? UNAUTHORIZED : UNPROMPTED
-        let locationTipsText = auth ? AUTHORIZED_TIPS
-          : (auth === false) ? UNAUTHORIZED_TIPS : UNPROMPTED_TIPS
         this.setData({
           locationAuthType: locationAuthType,
-          locationTipsText: locationTipsText
         })
 
         if (auth)
@@ -135,7 +131,6 @@ Page({
       success: res => {
         this.setData({
           locationAuthType: AUTHORIZED,
-          locationTipsText: AUTHORIZED_TIPS
         })
         this.qqmapsdk.reverseGeocoder({
           location: {
@@ -144,6 +139,7 @@ Page({
           },
           success: res => {
             let city = res.result.address_component.city
+            console.log(city)
             this.setData({
               city: city,
             })
@@ -154,7 +150,6 @@ Page({
       fail: () => {
         this.setData({
           locationAuthType: UNAUTHORIZED,
-          locationTipsText: UNAUTHORIZED_TIPS
         })
       }
     })
