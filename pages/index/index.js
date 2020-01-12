@@ -1,6 +1,3 @@
-const QQMapWX = require('../../libs/qqmap-wx-jssdk.js')
-
-
 const weatherMap = {
   'sunny': '晴天',
   'cloudy': '多云',
@@ -19,118 +16,147 @@ const weatherColorMap = {
   'snow': '#aae1fc'
 }
 
-Page({
+const QQMapWX = require('../../libs/qqmap-wx-jssdk.js')
 
-  data:{
-    weather:'',
-    temp:'',
-    weatherBackground:'',
+const UNPROMPTED = 0
+const UNAUTHORIZED = 1
+const AUTHORIZED = 2
+
+const UNPROMPTED_TIPS = "点击获取当前位置"
+const UNAUTHORIZED_TIPS = "点击开启位置权限"
+const AUTHORIZED_TIPS = ""
+
+Page({
+  data: {
+    nowTemp: '',
+    nowWeather: '',
+    nowWeatherBackground: "",
     hourlyWeather: [],
-    todayTime:'',
-    todayTemp:'',
-    city:'上海市',
-    tapTip:'点击查看当前位置'
+    todayTemp: "",
+    todayDate: "",
+    city: '广州市',
+    locationTipsText: UNPROMPTED_TIPS,
+    locationAuthType: UNPROMPTED
   },
-  onPullDownRefresh(){
-    this.getData(()=>{
+  onLoad() {
+    this.qqmapsdk = new QQMapWX({
+      key: 'EAXBZ-33R3X-AA64F-7FIPQ-BY27J-5UF5B'
+    })
+    wx.getSetting({
+      success: res => {
+        let auth = res.authSetting['scope.userLocation']
+        let locationAuthType = auth ? AUTHORIZED
+          : (auth === false) ? UNAUTHORIZED : UNPROMPTED
+        let locationTipsText = auth ? AUTHORIZED_TIPS
+          : (auth === false) ? UNAUTHORIZED_TIPS : UNPROMPTED_TIPS
+        this.setData({
+          locationAuthType: locationAuthType,
+          locationTipsText: locationTipsText
+        })
+
+        if (auth)
+          this.getCityAndWeather()
+        else
+          this.getNow() //使用默认城市广州
+      },
+      fail: () => {
+        this.getNow() //使用默认城市广州
+      }
+    })
+  },
+  onPullDownRefresh() {
+    this.getNow(() => {
       wx.stopPullDownRefresh()
     })
   },
-  getData(callBack){
+  getNow(callback) {
     wx.request({
       url: 'https://test-miniprogram.com/api/weather/now',
       data: {
         city: this.data.city
       },
-      header: {
-        'content-type': 'application/json' // 默认值
-      },
       success: res => {
-        console.log(res.data)
         let result = res.data.result
-        this.getNowData(result)
-        this.getHourlyData(result)
+        this.setNow(result)
+        this.setHourlyWeather(result)
         this.setToday(result)
-
       },
-      complete: ()=>{
-        callBack && callBack()
-    
+      complete: () => {
+        callback && callback()
       }
-
-    
     })
   },
-  getNowData(result){
-    let weahter1 = result.now.weather
-    let temp2 = result.now.temp
-    console.log(weahter1, temp2)
+  setNow(result) {
+    let temp = result.now.temp
+    let weather = result.now.weather
     this.setData({
-      weather: weatherMap[weahter1],
-      temp: temp2 + '*',
-      weatherBackground: '/images/' + weahter1 + '-bg.png'
+      nowTemp: temp + '°',
+      nowWeather: weatherMap[weather],
+      nowWeatherBackground: '/images/' + weather + '-bg.png'
     })
-
     wx.setNavigationBarColor({
       frontColor: '#000000',
-      backgroundColor: weatherColorMap[weahter1],
+      backgroundColor: weatherColorMap[weather],
     })
   },
-  getHourlyData(result){
+  setHourlyWeather(result) {
     let forecast = result.forecast
     let hourlyWeather = []
-    let hours = new Date().getHours()
-    for (let i = 0; i < 8; i++) {
+    let nowHour = new Date().getHours()
+    for (let i = 0; i < 8; i += 1) {
       hourlyWeather.push({
-        time: (i * 3 + hours) % 24 + "时",
-        path: "/images/" + forecast[i].weather + "-icon.png",
-        temp: forecast[i].temp
-
+        time: (i * 3 + nowHour) % 24 + "时",
+        iconPath: '/images/' + forecast[i].weather + '-icon.png',
+        temp: forecast[i].temp + '°'
       })
     }
-    hourlyWeather[0].time = "现在"
-    this.setData({ hourlyWeather: hourlyWeather })
-  },
-  setToday(result){
-    let date =  new Date();
+    hourlyWeather[0].time = '现在'
     this.setData({
-      todayTime: `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} 今天`,
-      todayTemp: `${result.today.minTemp}° - ${result.today.maxTemp}°`
+      hourlyWeather: hourlyWeather
     })
-
   },
-  toTodayDetail(){
-      wx.navigateTo({
-        url: '/pages/list/list?city='+this.data.city
-      })
-  },
-  getLocation(){
-     wx.getLocation({
-       success: res => {
-         console.log(res.latitude,res.longitude)
-         this.qqmapsdk.reverseGeocoder({
-           location: {
-             latitude: res.latitude,
-             longitude: res.longitude
-           },
-           success: res => {
-             let city = res.result.address_component.city
-             console.log(city)
-             this.setData({
-               city:city,
-               tapTip:""
-             })
-             this.getData()
-           }
-         })
-       },
-     })
-  },
-  onLoad(){
-    this.getData()
-    this.qqmapsdk = new QQMapWX({
-      key: 'EAXBZ-33R3X-AA64F-7FIPQ-BY27J-5UF5B'
+  setToday(result) {
+    let date = new Date()
+    this.setData({
+      todayTemp: `${result.today.minTemp}° - ${result.today.maxTemp}°`,
+      todayDate: `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} 今天`
     })
-    
+  },
+  onTapDayWeather() {
+    wx.navigateTo({
+      url: '/pages/list/list?city=' + this.data.city,
+    })
+  },
+  onTapLocation() {
+    this.getCityAndWeather()
+  },
+  getCityAndWeather() {
+    wx.getLocation({
+      success: res => {
+        this.setData({
+          locationAuthType: AUTHORIZED,
+          locationTipsText: AUTHORIZED_TIPS
+        })
+        this.qqmapsdk.reverseGeocoder({
+          location: {
+            latitude: res.latitude,
+            longitude: res.longitude
+          },
+          success: res => {
+            let city = res.result.address_component.city
+            this.setData({
+              city: city,
+            })
+            this.getNow()
+          }
+        })
+      },
+      fail: () => {
+        this.setData({
+          locationAuthType: UNAUTHORIZED,
+          locationTipsText: UNAUTHORIZED_TIPS
+        })
+      }
+    })
   }
 })

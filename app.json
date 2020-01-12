@@ -4,6 +4,11 @@
     "pages/index/index",
     "pages/list/list"
   ],
+  "permission": {
+  "scope.userLocation": {
+    "desc": "你的位置信息将用于地图展示"
+    }
+  },
   "window": {
     "backgroundTextStyle": "dark",
     "navigationBarBackgroundColor": "#fff",
